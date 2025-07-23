@@ -60,21 +60,39 @@ def check_announcements():
         raise Error(res.text.strip())
 
 
-def check_version():
+def check_version(package_name=__package__, timeout=15):
     """Check that submit50 is the latest version according to submit50.io."""
+    if not __version__:
+        return
+
     # Retrieve version info
-    res = requests.get(f"{SUBMIT_URL}/versions/submit50")
+    res = requests.get(f"{SUBMIT_URL}/versions/submit50", timeout=timeout)
     if res.status_code != 200:
-        raise Error(_("You have an unknown version of submit50. "
-                      "Please visit our status page https://cs50.statuspage.io for more information."))
+        raise Error(_("Could not connect to submit.cs50.io."
+                        "Please visit our status page https://cs50.statuspage.io for more information."))
 
-    # Check that latest version == version installed
-    required_version = version.parse(res.text.strip())
-    local_version = version.parse(__version__)
+    # Get submit.cs50.io version
+    latest_io = version.parse(res.text.strip())
+    current = version.parse(__version__)
 
-    if required_version > local_version:
-       raise Error(_("You have an outdated version of submit50. "
-                     "Please upgrade."))
+    # Get PyPi version
+    latest_pypi = max(
+        requests.get(f"https://pypi.org/pypi/{package_name}/json", timeout=timeout).json()["releases"],
+        key=version.parse
+    )
+    latest_pypi = version.parse(latest_pypi)
+
+    # Check for minimum requirement
+    if current < latest_io:
+        pass
+
+    # Check for latest version
+    if latest_pypi > current or latest_io > current:
+        raise Error(_(f"A newer version of {package_name} is available. Run pip3 install --upgrade {package_name} to upgrade."))
+
+    # Resolve if submit.cs50.io version differs from PyPi
+    if latest_pypi != latest_io:
+        pass
 
 
 def setup_logging(level):
@@ -179,7 +197,7 @@ def check_slug_year(slug):
             # Ask if they want to continue
             if not re.match(f"^\s*(?:{_('y|yes')})\s*$", input(_("Do you want to continue with this submission (yes/no)? ")), re.I):
                 raise Error(_("User aborted submission."))
-            
+
     except ValueError:
         pass
 
@@ -246,7 +264,7 @@ def main():
     check_announcements()
     check_version()
     check_slug_year(args.slug)
-    
+
     user_name, commit_hash, message = lib50.push("submit50", args.slug, CONFIG_LOADER, prompt=prompt)
     print(message)
 
