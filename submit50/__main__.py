@@ -60,7 +60,7 @@ def check_announcements():
         raise Error(res.text.strip())
 
 
-def check_version(package_name=__package__, timeout=15):
+def check_version(package_name=__package__, timeout=30):
     """Check that submit50 is the latest version according to submit50.io."""
     if not __version__:
         return
@@ -69,7 +69,7 @@ def check_version(package_name=__package__, timeout=15):
     res = requests.get(f"{SUBMIT_URL}/versions/submit50", timeout=timeout)
     if res.status_code != 200:
         raise Error(_("Could not connect to submit.cs50.io."
-                        "Please visit our status page https://cs50.statuspage.io for more information."))
+                      "Please visit our status page https://cs50.statuspage.io for more information."))
 
     # Get submit.cs50.io version
     latest_io = version.parse(res.text.strip())
@@ -84,15 +84,11 @@ def check_version(package_name=__package__, timeout=15):
 
     # Check for minimum requirement
     if current < latest_io:
-        pass
+        raise Error(_(f"v{current} of {package_name} is no longer supported. Run pip3 install --upgrade {package_name} to upgrade."))
 
     # Check for latest version
     if latest_pypi > current or latest_io > current:
-        raise Error(_(f"A newer version of {package_name} is available. Run pip3 install --upgrade {package_name} to upgrade."))
-
-    # Resolve if submit.cs50.io version differs from PyPi
-    if latest_pypi != latest_io:
-        pass
+        cprint(f"A newer version of {package_name} is available. Run pip3 install --upgrade {package_name} to upgrade.", "magenta")
 
 
 def setup_logging(level):
