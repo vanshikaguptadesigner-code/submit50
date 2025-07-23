@@ -61,7 +61,7 @@ def check_announcements():
 
 
 def check_version(package_name=__package__, timeout=30):
-    """Check that submit50 is the latest version according to submit50.io."""
+    """Check that submit50 is the latest version according to submit50.io and PyPI."""
     if not __version__:
         return
 
@@ -75,7 +75,7 @@ def check_version(package_name=__package__, timeout=30):
     latest_io = version.parse(res.text.strip())
     current = version.parse(__version__)
 
-    # Get PyPi version
+    # Get PyPI version
     latest_pypi = max(
         requests.get(f"https://pypi.org/pypi/{package_name}/json", timeout=timeout).json()["releases"],
         key=version.parse
@@ -87,7 +87,7 @@ def check_version(package_name=__package__, timeout=30):
         raise Error(_(f"v{current} of {package_name} is no longer supported. Run pip3 install --upgrade {package_name} to upgrade."))
 
     # Check for latest version
-    if latest_pypi > current or latest_io > current:
+    if latest_pypi > current:
         cprint(f"A newer version of {package_name} is available. Run pip3 install --upgrade {package_name} to upgrade.", "magenta")
 
 
