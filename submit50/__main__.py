@@ -60,8 +60,8 @@ def check_announcements():
         raise Error(res.text.strip())
 
 
-def check_version(package_name=__package__, timeout=30):
-    """Check that submit50 is the latest version according to submit50.io and PyPI."""
+def check_version(package_name=__package__, timeout=5):
+    """Check that submit50 is the latest version according to submit.cs50.io and PyPI."""
     if not __version__:
         return
 
@@ -71,7 +71,7 @@ def check_version(package_name=__package__, timeout=30):
         raise Error(_("Could not connect to submit.cs50.io."
                       "Please visit our status page https://cs50.statuspage.io for more information."))
 
-    # Get submit.cs50.io version
+    # Get the minimum required version from submit.cs50.io
     latest_io = version.parse(res.text.strip())
     current = version.parse(__version__)
 
@@ -84,7 +84,7 @@ def check_version(package_name=__package__, timeout=30):
 
     # Check for minimum requirement
     if current < latest_io:
-        raise Error(_(f"v{current} of {package_name} is no longer supported. Run pip3 install --upgrade {package_name} to upgrade."))
+        raise Error(_(f"Current version {current} of {package_name} is no longer supported. Run pip3 install --upgrade {package_name} now to upgrade."))
 
     # Check for latest version
     if latest_pypi > current:
