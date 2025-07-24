@@ -193,7 +193,7 @@ def check_slug_year(slug):
             # Ask if they want to continue
             if not re.match(f"^\s*(?:{_('y|yes')})\s*$", input(_("Do you want to continue with this submission (yes/no)? ")), re.I):
                 raise Error(_("User aborted submission."))
-
+            
     except ValueError:
         pass
 
@@ -260,7 +260,7 @@ def main():
     check_announcements()
     check_version()
     check_slug_year(args.slug)
-
+    
     user_name, commit_hash, message = lib50.push("submit50", args.slug, CONFIG_LOADER, prompt=prompt)
     print(message)
 
