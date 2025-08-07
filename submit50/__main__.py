@@ -23,6 +23,8 @@ from . import __version__, CONFIG_LOADER
 # Internationalization
 gettext.install("submit50", str(files("submit50").joinpath("locale")))
 
+LOGGER = logging.getLogger("submit50")
+
 SUBMIT_URL = "https://submit.cs50.io"
 
 class LogLevel(enum.IntEnum):
@@ -243,6 +245,12 @@ def main():
                 '\ninfo: adds all commands run.'
                 '\ndebug: adds the output of all commands run.')
     )
+    parser.add_argument("--https",
+                        action="store_true",
+                        help=_("force authentication via HTTPS"))
+    parser.add_argument("--ssh",
+                        action="store_true",
+                        help=_("force authentication via SSH"))
     parser.add_argument(
         "-V", "--version",
         action="version",
@@ -260,8 +268,30 @@ def main():
     check_announcements()
     check_version()
     check_slug_year(args.slug)
-    
-    user_name, commit_hash, message = lib50.push("submit50", args.slug, CONFIG_LOADER, prompt=prompt)
+
+    # Decide whether to force HTTPS or SSH authentication
+    if args.https and args.ssh:
+        LOGGER.warning(_("--https and --ssh have no effect when used together"))
+        auth_method = None
+    elif args.https:
+        auth_method = "https"
+    elif args.ssh:
+        auth_method = "ssh"
+    else:
+        auth_method = None
+
+    try:
+        user_name, commit_hash, message = lib50.push("submit50", args.slug, CONFIG_LOADER, prompt=prompt, auth_method=auth_method)
+    except lib50.ConnectionError:
+        LOGGER.debug(traceback.format_exc())
+        if not os.environ.get("CODESPACES"):
+            raise Error(_(
+                "submit50 failed to authenticate your Github account. Please make sure you are connected to the internet and try again."
+            ))
+    except Exception as e:
+        LOGGER.debug(traceback.format_exc())
+        raise Error(_("Sorry, something's wrong, please try again.\n"
+                                    "If the problem persists, please visit our status page https://cs50.statuspage.io for more information.")) from e
     print(message)
 
 if __name__ == "__main__":
